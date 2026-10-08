@@ -1,0 +1,14 @@
+{{ define "main" }}
+<nav class="breadcrumb"><a href="{{ "/" | relURL }}">首页</a> / {{ .Title }}</nav>
+<h1 class="page-title">{{ .Title }}</h1>
+{{ with .Content }}<div class="page-intro">{{ . }}</div>{{ end }}
+<div class="card-grid">
+{{ range .Pages.ByWeight }}
+  <a class="card" href="{{ .RelPermalink }}">
+    <h3>{{ .Title }}</h3>
+    {{ with .Params.description }}<p>{{ . }}</p>{{ end }}
+    <span class="card-link">阅读 →</span>
+  </a>
+{{ end }}
+</div>
+{{ end }}

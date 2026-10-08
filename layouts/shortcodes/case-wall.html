@@ -1,0 +1,8 @@
+<div class="card-grid">
+{{ range $i, $c := .Site.Data.cases }}
+  <article class="card">
+    <h3><span class="case-num">{{ add $i 1 }}.</span> {{ $c.title }}</h3>
+    <p>{{ $c.text }}</p>
+  </article>
+{{ end }}
+</div>

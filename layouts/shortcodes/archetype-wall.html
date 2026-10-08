@@ -1,0 +1,16 @@
+<div class="filter-bar" id="archetypeFilter">
+  <button class="filter-btn active" data-filter="all">全部（10 种）</button>
+  <button class="filter-btn" data-filter="chengzhang">推动成长（5 种）</button>
+  <button class="filter-btn" data-filter="jiejue">解决问题（5 种）</button>
+</div>
+<div class="card-grid archetype-grid" id="archetypeGrid">
+{{ range .Site.Data.archetypes }}
+  <article class="card archetype-card" data-category="{{ .category }}">
+    <span class="tag">{{ .category_label }}</span>
+    <h3>{{ .name }}</h3>
+    <p><strong>定义：</strong>{{ .dingyi }}</p>
+    <p><strong>结构：</strong>{{ .jiegou }}</p>
+    <p><strong>典型案例：</strong>{{ .anli }}</p>
+  </article>
+{{ end }}
+</div>

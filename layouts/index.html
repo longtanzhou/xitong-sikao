@@ -1,0 +1,95 @@
+{{ define "main" }}
+<section class="hero">
+  <p class="hero-kicker">邱昭良 著 · 《如何系统思考（第2版）》互动学习站</p>
+  <h1 class="hero-title">如何系统思考</h1>
+  <p class="hero-claim">系统的行为由其结构决定。<br>想改变系统的行为，就要改造或顺应其结构。</p>
+  <p class="hero-desc">把系统思考从高深理论，变成一套可实操的方法论工具箱：先建立认知，再掌握工具，最后落到应用。</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="{{ "/renzhi/" | relURL }}">从认知篇开始</a>
+    <a class="btn" href="{{ "/fangfa/jimo/" | relURL }}">直达系统基模</a>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">三篇导航</h2>
+  <div class="card-grid">
+    <a class="card" href="{{ "/renzhi/" | relURL }}">
+      <h3>第一篇 · 认知</h3>
+      <p>什么是系统？为什么要转变思维？建立系统思考的世界观。</p>
+      <span class="card-link">进入 →</span>
+    </a>
+    <a class="card" href="{{ "/fangfa/" | relURL }}">
+      <h3>第二篇 · 方法与工具</h3>
+      <p>冰山模型、因果回路图、系统基模：怎么思考的工具箱。</p>
+      <span class="card-link">进入 →</span>
+    </a>
+    <a class="card" href="{{ "/yingyong/" | relURL }}">
+      <h3>第三篇 · 应用</h3>
+      <p>设计成长引擎、睿智解决复杂问题，把思考变成行动。</p>
+      <span class="card-link">进入 →</span>
+    </a>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">核心框架速览</h2>
+  <div class="card-grid">
+    <a class="card" href="{{ "/renzhi/mofang/" | relURL }}">
+      <h3>思考的魔方</h3>
+      <p>角度 · 深度 · 广度：思维范式转变的行动框架。</p>
+    </a>
+    <a class="card" href="{{ "/fangfa/bingshan/" | relURL }}">
+      <h3>冰山模型</h3>
+      <p>事件 → 趋势 → 结构 → 心智模式，透过现象看本质。</p>
+    </a>
+    <a class="card" href="{{ "/fangfa/huilu/" | relURL }}">
+      <h3>因果回路图</h3>
+      <p>系统思考的"新语言"：增强回路、调节回路与时间延迟。</p>
+    </a>
+    <a class="card" href="{{ "/fangfa/jimo/" | relURL }}">
+      <h3>系统基模</h3>
+      <p>十种反复出现的系统结构"典故"，复杂背后的简单之美。</p>
+    </a>
+    <a class="card" href="{{ "/yingyong/yinqing/" | relURL }}">
+      <h3>成长引擎</h3>
+      <p>推动企业持续成长的反馈回路：九种类型与六步设计法。</p>
+    </a>
+    <a class="card" href="{{ "/yingyong/wenti/" | relURL }}">
+      <h3>根本解与杠杆解</h3>
+      <p>治"未病"的三重境界，与"四两拨千斤"的杠杆点。</p>
+    </a>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">金句轮播</h2>
+  <div class="quote-carousel" id="quoteCarousel">
+    {{ range $i, $q := first 8 .Site.Data.quotes }}
+    <blockquote class="quote-slide{{ if eq $i 0 }} active{{ end }}">
+      <p>"{{ $q.text }}"</p>
+      <cite>— {{ $q.source }}</cite>
+    </blockquote>
+    {{ end }}
+    <div class="carousel-controls">
+      <button id="quotePrev" aria-label="上一条">‹</button>
+      <span id="quoteDots" class="dots"></span>
+      <button id="quoteNext" aria-label="下一条">›</button>
+    </div>
+  </div>
+  <p class="center"><a class="btn" href="{{ "/jinju/" | relURL }}">查看全部十五条金句</a></p>
+</section>
+
+<section class="section">
+  <h2 class="section-title">开始学习</h2>
+  <div class="card-grid">
+    <a class="card" href="{{ "/anli/" | relURL }}">
+      <h3>十二个经典案例</h3>
+      <p>从倒一杯水到啤酒游戏，看系统思考如何解释真实世界。</p>
+    </a>
+    <a class="card" href="{{ "/yingyong/yangcheng/" | relURL }}">
+      <h3>技能养成</h3>
+      <p>"读完书就会系统思考了？"——从知道到做到的四阶段修炼。</p>
+    </a>
+  </div>
+</section>
+{{ end }}

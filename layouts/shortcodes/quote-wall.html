@@ -1,0 +1,8 @@
+<div class="quote-wall">
+{{ range .Site.Data.quotes }}
+  <blockquote class="quote-card">
+    <p>"{{ .text }}"</p>
+    <cite>— {{ .source }}</cite>
+  </blockquote>
+{{ end }}
+</div>

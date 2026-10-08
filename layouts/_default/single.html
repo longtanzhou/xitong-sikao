@@ -1,0 +1,14 @@
+{{ define "main" }}
+<nav class="breadcrumb"><a href="{{ "/" | relURL }}">首页</a>{{ with .Parent }}{{ if not .IsHome }} / <a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}{{ end }} / {{ .Title }}</nav>
+<article class="article">
+  <h1 class="page-title">{{ .Title }}</h1>
+  {{ with .Params.description }}<p class="article-lead">{{ . }}</p>{{ end }}
+  <div class="article-body">
+  {{ .Content }}
+  </div>
+</article>
+<nav class="page-nav">
+  {{ with .PrevInSection }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+  {{ with .NextInSection }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
+</nav>
+{{ end }}
