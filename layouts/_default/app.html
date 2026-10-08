@@ -1,0 +1,11 @@
+{{ define "main" }}
+<link rel="stylesheet" href="{{ "app/app.css" | relURL }}">
+<div id="app"><div class="app-loading">加载中…</div></div>
+<script>
+window.APP_CONFIG = {
+  supabaseUrl: "{{ getenv "SUPABASE_URL" }}",
+  supabaseAnonKey: "{{ getenv "SUPABASE_ANON_KEY" }}"
+};
+</script>
+<script src="{{ "app/app.js" | relURL }}"></script>
+{{ end }}

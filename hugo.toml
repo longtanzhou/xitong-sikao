@@ -17,3 +17,8 @@ theme = ''
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+
+# 允许模板读取 SUPABASE_ 前缀的环境变量（练习工作台需要）
+[security]
+  [security.funcs]
+    getenv = ['^HUGO_', '^SUPABASE_']

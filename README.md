@@ -31,3 +31,15 @@ hugo --minify   # 产物输出到 public/
 - `content/jinju/` —— 15 条金句
 
 > 原书约 103 页图表为图片，无法逐项核验，网站内容整理自文字版，图表细节请对照原书。
+
+## 练习工作台（MVP）
+
+`/app/` 是一个内嵌的单页应用（`static/app/`），为学习者提供三个练习工具：
+
+- **冰山模型练习**：四步引导（事件→趋势→结构→心智模式），可保存草稿
+- **基模诊断**：对照十大系统基模做症状匹配，输出结构解释与管理原则
+- **回路图绘制**：填变量、定极性，自动生成因果回路图（SVG）
+
+账号与数据由 [Supabase](https://supabase.com) 提供（魔法链接登录 + Postgres + RLS）。
+首次部署前按 `SUPABASE_SETUP.md` 完成 4 步配置，并在 Cloudflare Pages 环境变量中添加
+`SUPABASE_URL` 与 `SUPABASE_ANON_KEY`。
