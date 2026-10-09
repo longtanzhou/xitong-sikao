@@ -19,6 +19,23 @@ const READY = SB_URL.startsWith('https://') && SB_KEY.length > 20;
 
 /* ---------- 极简 Supabase 客户端（GoTrue + PostgREST，无外部依赖） ---------- */
 const LS_KEY = 'st_session_v1';
+/* ---------- PKCE（魔法链接登录需要：挑战发给服务器，verifier 留本地，回调时换 session） ---------- */
+const PKCE_KEY = 'st_pkce_v1';
+function pkceRandom() {
+  const a = new Uint8Array(32);
+  if (crypto.getRandomValues) crypto.getRandomValues(a);
+  else for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+  let s = '';
+  for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function pkceChallenge(v) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v));
+  const bytes = new Uint8Array(d);
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 const store = {
   read() { try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { return null; } },
   write(s) { localStorage.setItem(LS_KEY, JSON.stringify(s)); },
@@ -36,10 +53,14 @@ async function authFetch(path, opts = {}) {
 const Auth = {
   session: null,
   async sendLink(email) {
-    await authFetch('/auth/v1/otp', {
-      method: 'POST',
-      body: JSON.stringify({ email, options: { email_redirect_to: location.origin + '/app/' } })
-    });
+    // PKCE：生成 code_verifier，挑战发给服务器，verifier 留在本地，登录回调时用它换 session
+    const verifier = pkceRandom();
+    let challenge = null;
+    try { challenge = await pkceChallenge(verifier); } catch (e) { /* 非安全上下文则降级 */ }
+    if (challenge) { try { localStorage.setItem(PKCE_KEY, verifier); } catch (e) {} }
+    const body = { email, options: { email_redirect_to: location.origin + '/app/' } };
+    if (challenge) { body.code_challenge = challenge; body.code_challenge_method = 'S256'; }
+    await authFetch('/auth/v1/otp', { method: 'POST', body: JSON.stringify(body) });
   },
   async getSession() {
     let s = this.session || store.read();
@@ -244,7 +265,8 @@ function viewLogin(user) {
     btn.disabled = true; btn.textContent = '发送中…';
     try {
       await Auth.sendLink(email);
-      msg.innerHTML = '<div class="msg msg-ok">登录链接已发送到 <b>' + esc(email) + '</b>，请查收邮件（注意垃圾箱），点击链接即可登录。</div>';
+      msg.innerHTML = '<div class="msg msg-ok">登录链接已发送到 <b>' + esc(email) + '</b>，请查收邮件（注意垃圾箱），点击链接即可登录。<br>没收到或写错了邮箱？可以重新发送（旧链接会失效）。</div>';
+      btn.disabled = false; btn.textContent = '重新发送';
     } catch (e) {
       msg.innerHTML = '<div class="msg msg-err">' + esc(e.message) + '</div>';
       btn.disabled = false; btn.textContent = '发送登录链接';
@@ -605,23 +627,74 @@ async function viewLoopView(id) {
   document.getElementById('loopEditBtn').addEventListener('click', () => nav('#/loop/' + id + '/edit'));
 }
 
+/* ---------- 魔法链接回调：处理 ?code=（PKCE）、?token_hash=，兼容旧的 #access_token= ---------- */
+let authError = null;
+async function saveSession(d) {
+  const s = {
+    access_token: d.access_token, refresh_token: d.refresh_token,
+    expires_at: Math.floor(Date.now() / 1000) + (d.expires_in || 3600),
+    user: d.user ? { id: d.user.id, email: d.user.email } : null
+  };
+  if (!s.user && s.access_token) {
+    try {
+      const me = await authFetch('/auth/v1/user', { headers: { 'Authorization': 'Bearer ' + s.access_token } });
+      s.user = { id: me.id, email: me.email };
+    } catch (e) {}
+  }
+  Auth.session = s;
+  try { store.write(s); } catch (e) {}
+  try { localStorage.removeItem(PKCE_KEY); } catch (e) {}
+  return s;
+}
+async function handleAuthCallback() {
+  const q = new URLSearchParams(location.search);
+  const code = q.get('code');
+  const tokenHash = q.get('token_hash');
+  const qErr = q.get('error');
+  const hash = location.hash || '';
+  const legacy = !code && !tokenHash && /#access_token=/.test(hash);
+  if (!code && !tokenHash && !qErr && !legacy) return false; // 不是登录回调
+  const clean = () => { try { history.replaceState(null, '', location.pathname + '#/'); } catch (e) { location.hash = '#/'; } };
+  if (!READY) { clean(); return true; } // 无配置时直接清掉回调参数，走配置提示页
+  try {
+    if (qErr) throw new Error(q.get('error_description') || '登录链接无效或已过期');
+    if (code) {
+      let verifier = null;
+      try { verifier = localStorage.getItem(PKCE_KEY); } catch (e) {}
+      if (!verifier) throw new Error('登录链接需要在发送它的同一浏览器中打开。请回到原浏览器点击链接，或重新发送一封');
+      const d = await authFetch('/auth/v1/token?grant_type=pkce', {
+        method: 'POST',
+        body: JSON.stringify({ auth_code: code, code_verifier: verifier })
+      });
+      await saveSession(d);
+    } else if (tokenHash) {
+      const d = await authFetch('/auth/v1/verify', {
+        method: 'POST',
+        body: JSON.stringify({ token_hash: tokenHash, type: q.get('type') || 'magiclink' })
+      });
+      await saveSession(d);
+    } else {
+      const p = Object.fromEntries(new URLSearchParams(hash.slice(1)));
+      if (!p.access_token) throw new Error('登录链接无效');
+      await saveSession({ access_token: p.access_token, refresh_token: p.refresh_token, expires_in: parseInt(p.expires_in || 3600, 10), user: null });
+    }
+  } catch (e) {
+    authError = e.message || '登录失败';
+  }
+  clean();
+  return true;
+}
+function loginErrorView(msg) {
+  viewLogin(null);
+  const m = document.getElementById('loginMsg');
+  if (m) m.innerHTML = '<div class="msg msg-err">' + esc(msg) + '，请重新发送登录链接。</div>';
+}
+
 /* ---------- 主渲染 ---------- */
 async function render() {
-  if (/#access_token=/.test(location.hash)) {
-    const p = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
-    if (p.access_token) {
-      const s = {
-        access_token: p.access_token, refresh_token: p.refresh_token,
-        expires_at: Math.floor(Date.now() / 1000) + parseInt(p.expires_in || 3600, 10), user: null
-      };
-      try {
-        const me = await authFetch('/auth/v1/user', { headers: { 'Authorization': 'Bearer ' + p.access_token } });
-        s.user = { id: me.id, email: me.email };
-      } catch (e) {}
-      Auth.session = s; store.write(s);
-    }
-    location.hash = '#/';
-    return;
+  if (await handleAuthCallback()) {
+    if (authError) { const m = authError; authError = null; loginErrorView(m); return; }
+    // 回调已处理，URL 已清理为 #/，继续走正常路由
   }
   if (!READY) { setHTML(setupHTML()); return; }
   const [name, arg] = route();
